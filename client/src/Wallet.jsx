@@ -1,9 +1,9 @@
 import server from "./server";
-import {secp256k1} from "ethereum-cryptography/secp256k1"
-import {toHex, utf8ToBytes} from "ethereum-cryptography/utils"
-import {sha256} from "ethereum-cryptography/sha256.js"
+import { secp256k1 } from "ethereum-cryptography/secp256k1"
+import { toHex, utf8ToBytes } from "ethereum-cryptography/utils"
+import { sha256 } from "ethereum-cryptography/sha256.js"
 
-function Wallet({ address, setAddress, balance, setBalance,privateKey,setPrivateKey }) {
+function Wallet({ address, setAddress, balance, setBalance, privateKey, setPrivateKey }) {
   async function onChange(evt) {
     const privateKey = evt.target.value;
     setPrivateKey(privateKey);
@@ -34,7 +34,7 @@ function Wallet({ address, setAddress, balance, setBalance,privateKey,setPrivate
       </label>
 
       <div>
-        Address: {address}
+        Address: {address.slice(0, 10)}...
       </div>
 
       <div className="balance">Balance: {balance}</div>
