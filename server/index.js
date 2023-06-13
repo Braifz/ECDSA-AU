@@ -1,5 +1,7 @@
 import express from "express";
 import cors from "cors";
+import {keccak256} from "ethereum-cryptography/keccak"
+import {toHex,utf8ToBytes} from "ethereum-cryptography/utils"
 
 const app = express();
 const port = 3042;
@@ -8,9 +10,9 @@ app.use(cors());
 app.use(express.json());
 
 const balances = {
-  "02dacc7a19ae90de06259527e2f42ad08d2f7bca73409f3cdae72fea8764fefa3f": 100,
-  "030fa5df60bb1e1683bc96bef960ac62cc4de595e9435abcb60c1c93b90abb9db1": 50,
-  "032ce306552085d18d714725930b69976e4936142b08ec6f286966abb7c0e8b6da": 75,
+  "4a57b3f8eca4d1bab619fefef290dbeaaf967742d50cd4b3722510bce86a7109": 100,
+  "96a4c90dd85533134620636097e59c0dd760fdd6bf1716960d484758bdd1bf0d": 50,
+  "06ca58c36a35276fa83130214aec954872d38834c017f7949db33390019394a6": 75,
 };
 
 app.get("/balance/:address", (req, res) => {
@@ -19,18 +21,38 @@ app.get("/balance/:address", (req, res) => {
   res.send({ balance });
 });
 
-app.post("/send", (req, res) => {
-  const { sender, recipient, amount } = req.body;
+app.post("/send", async (req, res) => {
+  const { sender, recipient, amount,signature,recovery } = req.body;
 
-  setInitialBalance(sender);
-  setInitialBalance(recipient);
 
-  if (balances[sender] < amount) {
-    res.status(400).send({ message: "Not enough funds!" });
-  } else {
-    balances[sender] -= amount;
-    balances[recipient] += amount;
-    res.send({ balance: balances[sender] });
+  if(!signature) res.status(404).send({message:"signature dont was provide"});
+  if(!recovery) res.status(400).send({message:"recovery dont was provide"});
+
+
+  try {
+    const bytes = utf8ToBytes(JSON.stringify({sender, recipient, amount}))
+    const hash = keccak256(bytes)
+
+    const sig = new Uint8Array(signature)
+
+    const publicKey = await secp.recoverPublicKey(hash,sig,recovery)
+
+    if(toHex(publicKey) !== sender){
+      res.status(400).send({message: "signature no is valid"})
+    }
+
+    setInitialBalance(sender);
+    setInitialBalance(recipient);
+    
+    if (balances[sender] < amount) {
+      res.status(400).send({ message: "Not enough funds!" });
+    } else {
+      balances[sender] -= amount;
+      balances[recipient] += amount;
+      res.send({ balance: balances[sender] });
+    }
+  } catch (e) {
+    console.log(e.message)
   }
 });
 
